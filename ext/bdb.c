@@ -3004,11 +3004,16 @@ VALUE env_repmgr_set_local_site(VALUE obj, VALUE host, VALUE port)
 {
   t_envh *eh;
   int rv;
+  DB_SITE *dbSite;
 
   Data_Get_Struct(obj,t_envh,eh);
-  rv = eh->env->repmgr_set_local_site(eh->env, StringValuePtr(host), NUM2UINT(port), 0);
+  rv = eh->env->repmgr_site(eh->env, StringValuePtr(host), NUM2UINT(port), &dbSite, 0);
 
   if ( rv != 0 ) raise_error(rv, "env_repmgr_set_local_site: %s", db_strerror(rv));
+
+  dbSite->set_config(dbSite, DB_LOCAL_SITE, 1);
+  dbSite->close(dbSite);
+
   return Qtrue;
 }
 
@@ -3023,11 +3028,15 @@ VALUE env_repmgr_add_remote_site(VALUE obj, VALUE host, VALUE port)
   t_envh *eh;
   int rv;
   int eidp;
+  DB_SITE *dbSite;
 
   Data_Get_Struct(obj,t_envh,eh);
-  rv = eh->env->repmgr_add_remote_site(eh->env, StringValuePtr(host), NUM2UINT(port), &eidp, 0);
-
+  rv = eh->env->repmgr_site(eh->env, StringValuePtr(host), NUM2UINT(port), &dbSite, 0);
   if ( rv != 0 ) raise_error(rv, "env_repmgr_add_remote_site: %s", db_strerror(rv));
+
+  dbSite->get_eid(dbSite, &eidp);
+  dbSite->close(dbSite);
+
   return INT2NUM(eidp);
 }
 
